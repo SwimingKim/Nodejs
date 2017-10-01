@@ -1,0 +1,19 @@
+{
+  "name": "server_side_javascript",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.1",
+    "jade": "^1.11.0",
+    "pug": "^2.0.0-rc.4",
+    "sample": "0.0.2",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {},
+  "description": ""
+}
