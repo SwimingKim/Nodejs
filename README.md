@@ -94,3 +94,51 @@ app.get('topic/:id/:mode', function(req, res) {
 });
 ```
 
+## FORM (in Jade/Pug)
+```
+form(action='/form_receiver' method='get/post')
+    p
+        input(type='text' name='title')
+    p
+        textarea(name='description')
+    p
+        input(type="submit")
+```
+
+## POST
+```
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended:false }));
+
+app.post('/form', function(req, res) {
+    res.send(req.body.id);
+});
+```
+
+## File
+```
+var fs = require('fs');
+fs.writeFile( 'path/', data, function(err) {
+    if (err) {
+        console.log(err);
+        res.status(500).send('Internal Sever Error');
+    }
+    res.redirect('/topic');
+});
+fs.readdir( 'path/', function(err, files) {
+    if (err) {
+        console.log(err);
+        res.status(500).send('Internal Sever Error');
+    }
+    res.send( files.length + ' files' );
+    res.render('view', {datas:files});
+});
+fs.readFile('data/'+id, 'utf8', function(err, data) {
+    if (err) {
+        console.log(err);
+        res.status(500).send('Internal Server Error');
+    }
+    res.send( data );
+});
+```
+
