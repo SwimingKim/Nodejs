@@ -1,7 +1,7 @@
 # Nodejs
 
 ## 시작
-```{.javascript}
+```javascript
 const http = require('http');
 
 const hostname = '127.0.0.1';
@@ -21,7 +21,7 @@ npm install express pug --save --g
 ```
 
 ## Express
-```
+```javascript
 var express = require('express');
 var app = express();
 
@@ -35,7 +35,7 @@ app.listen(3000, function() {
 ```
 
 ## Dynamic HTML
-```
+```javascript
 app.get('/dynamic', function(req, res) {
     var lis = '';
     for (var i=0; i<5; i++) {
@@ -59,7 +59,7 @@ app.get('/dynamic', function(req, res) {
 ```
 
 ## View Engine
-```
+```javascript
 app.locals.pretty = true;
 app.set('view engine', 'pug');
 app.set('views', './views');
@@ -70,7 +70,7 @@ app.get('/template', function(req, res) {
 ```
 
 ## Query String ( http://localhost:3000/topic?id=0 )
-```
+```javascript
 app.get('/topic', function(req, res) {
     var topics = [
         'JavaScript is ...',
@@ -95,7 +95,7 @@ app.get('topic/:id/:mode', function(req, res) {
 ```
 
 ## FORM (in Jade/Pug)
-```
+```javascript
 form(action='/form_receiver' method='get/post')
     p
         input(type='text' name='title')
@@ -106,7 +106,7 @@ form(action='/form_receiver' method='get/post')
 ```
 
 ## POST
-```
+```javascript
 var bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended:false }));
 
@@ -116,7 +116,7 @@ app.post('/form', function(req, res) {
 ```
 
 ## File
-```
+```javascript
 var fs = require('fs');
 fs.writeFile( 'path/', data, function(err) {
     if (err) {
