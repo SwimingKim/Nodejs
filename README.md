@@ -243,6 +243,16 @@ conn.query(sql, function(err, rows, fields) {
     }
 });
 
+// INSERT
+var sql = 'INSERT INTO topic (title, description, author) VALUES ("Nodejs", "Server side javascript", "dev")';
+conn.query(sql, function(err, rows, fields) {
+    if (err) {
+        console.log(err);
+    } else {
+        console.log(rows);
+    }
+});
+
 // UPDATE
 var sql = 'UPDATE topic SET title=?, author=? WHERE id=?';
 var params = ['NPM', 'skim', 1];
