@@ -277,3 +277,85 @@ conn.query(sql, params, function(err, rows, fields) {
 conn.end();
 ```
 
+## Cookie
+```
+npm install cookie-parser --save
+```
+```javascript
+var cookieParser = require('cookie-parser');
+
+app.use(cookieParser('asdasd12e!@#sa'));
+var.get('/count', function(req, res) {
+    if (req.signedCookies.count) {
+        req.signedCookies.count++;
+    } else {
+        req.signedCookies.count = 1;
+    }
+    res.cookie('count', count, {signed:true});
+    res.send('count : '+count);
+});
+```
+
+## Session
+### general
+```
+npm install express-session --save
+```
+```javascript
+var session = require('express-session');
+app.use(session({
+    secret: 'adsa!@#!SDFa32',
+    resave: false,
+    saveUninitialized: true
+}));
+
+app.get('/count', function(req, res) {
+    if (req.session.count) {
+        req.session.count++;
+    } else {
+        req.session.count = 1;
+    }
+    res.send('count : '+req.session.count);
+});
+```
+### file
+```
+npm install session-file-store --save
+```
+```javascript
+var FileStore = require('session-file-store')(session);
+app.use(seesion({
+    secret: 'adsa!@#!SDFa32',
+    resave: false,
+    saveUninitialized: true,
+    store: new FileStore()
+}));
+```
+### MySQL
+```
+npm install express-mysql-session --save
+```
+```javascript
+var MySQLStore = require('express-mysql-session')(session);
+app.use(seesion({
+    secret: 'adsa!@#!SDFa32',
+    resave: false,
+    saveUninitialized: true,
+    store: new FileStore()
+}));
+```
+### OrientDB
+```
+npm install connect-oriento --save
+```
+```javascript
+var OrientoStore = require('connect-oriento')(session);
+app.use(session({
+    secret: 'afdfa@!#324',
+    resave: false,
+    saveUninitialized: true,
+    store: new OrientoStore({
+        server:'host=localhost&port=2424&username=root&password=pwd&db=dbname'
+    })
+}));
+```
