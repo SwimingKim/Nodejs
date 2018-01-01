@@ -3,6 +3,8 @@ var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var bodyParser = require('body-parser');
 var bkfd2Password = require('pbkdf2-password');
+var passport = require('passport');
+var LocalStratefy = require('passport-local').Strategy;
 var hasher = bkfd2Password();
 
 var app = express();
@@ -14,6 +16,8 @@ app.use(session({
     saveUninitialized: true,
     store: new FileStore()
 }));
+app.use(passport.initialize());
+app.use(passport.session());
 app.get('/count', function (req, res) {
     if (req.session.count) {
         req.session.count++;
@@ -23,13 +27,15 @@ app.get('/count', function (req, res) {
     res.send('count : ' + req.session.count);
 });
 app.get('/auth/logout', function (req, res) {
-    delete req.session.displayName;
-    res.redirect('/welcome');
+    req.logout();
+    req.session.save(function() {
+        res.redirect('/welcome');
+    });
 });
 app.get('/welcome', function (req, res) {
-    if (req.session.displayName) {
+    if (req.user && req.user.displayName) {
         res.send(`
-        <h1>Hello, ${req.session.displayName}</h1>
+        <h1>Hello, ${req.user.displayName}</h1>
         <a href="/auth/logout">Log out</a>
         `);
     } else {
@@ -42,53 +48,70 @@ app.get('/welcome', function (req, res) {
         `);
     }
 });
-app.post('/auth/login', function (req, res) {
-    var uname = req.body.username;
-    var pwd = req.body.password;
+passport.serializeUser(function(user, done) {
+    console.log('serializeUser', user);
+    done(null, user.username);
+});
+passport.deserializeUser(function(id, done) {
+    console.log('deserializeUser', id);
+    for (var i=0; i < users.length; i++) {
+        var user = users[i];
+        if (user.username === id) {
+            return done(null, user);
+        }
+    }
+});
+passport.use(new LocalStratefy(
+   function(username, password, done) {
+    var uname = username;
+    var pwd = password;
 
     for (var i=0; i < users.length; i++) {
         var user = users[i];
         if (uname == user.username) {
             return hasher({password:pwd, salt:user.salt}, function(err, pass, salt, hash) {
                 if (hash === user.password) {
-                    req.session.displayName = user.displayName;
-                    return req.session.save(function() {
-                        res.redirect('/welcome');
-                    });
+                    console.log('LocalStratefy', user);
+                    done(null, user);
                 } else {
-                    res.send('Who are you? <a href="/auth/login">Login</a>');
+                    done(null, false);
                 }
             });
         }
-        // if (uname === user.username && sha256(pwd+user.salt) === user.password) {
-        //     req.session.displayName = user.displayName;
-        //     return req.session.save(function() {
-        //         res.redirect('/welcome');
-        //     });
-        // }
     }
-    res.send('Who are you? <a href="/auth/login">Login</a>');
-});
+    done(null, false);
+   } 
+));
+app.post('/auth/login', passport.authenticate(
+    'local',
+    {
+        successRedirect: '/welcome',
+        failureRedirect: '/auth/login',
+        faliureFlash: false
+    }
+)
+);
 var users = [
     {
-        username:'egoing',
-        password:'NtaXUsnaAbUrAW8dsCratN3MhZkPs0qvp9ew5HwgLbm/dbI6sI91Xzr5h58//SV4IoqhPlI53JFoeVeo6ifdQetBXjVvc+AhBMEPv3c8c/9kD/RKn7Pfxwn+xJfQqh/MNhKcZUDkpD15a6LZb1AXUaiSQ8wLpXyFypVP5tuX6Mk=',
-        salt:'qAa8oRfF59K1N35PDhIQhL748mgcQ0VDg5fo01stP61j/0aHwe41CwJLvy4H1YP08rsgGhxy+ufACEiUQp2meQ==',
-        displayName:'Egoing'
+        username: 'egoing',
+        password: 'NtaXUsnaAbUrAW8dsCratN3MhZkPs0qvp9ew5HwgLbm/dbI6sI91Xzr5h58//SV4IoqhPlI53JFoeVeo6ifdQetBXjVvc+AhBMEPv3c8c/9kD/RKn7Pfxwn+xJfQqh/MNhKcZUDkpD15a6LZb1AXUaiSQ8wLpXyFypVP5tuX6Mk=',
+        salt: 'qAa8oRfF59K1N35PDhIQhL748mgcQ0VDg5fo01stP61j/0aHwe41CwJLvy4H1YP08rsgGhxy+ufACEiUQp2meQ==',
+        displayName: 'Egoing'
     }
 ];
-app.post('/auth/register', function(req, res) {
-    hasher({password:req.body.password}, function(err, pass, salt, hash) {
+app.post('/auth/register', function (req, res) {
+    hasher({ password: req.body.password }, function (err, pass, salt, hash) {
         var user = {
-            username : req.body.username,
-            password : hash,
-            salt : salt,
-            displayName : req.body.displayName
+            username: req.body.username,
+            password: hash,
+            salt: salt,
+            displayName: req.body.displayName
         };
         users.push(user);
-        req.session.displayName = req.body.displayName;
-        req.session.save(function() {
-            res.redirect('/welcome');
+        req.login(user, function(err) {
+            req.session.save(function () {
+                res.redirect('/welcome');
+            });
         });
     });
 });
