@@ -20,6 +20,7 @@
     "node-mysql": "^0.4.2",
     "orientjs": "^2.2.6",
     "passport": "^0.4.0",
+    "passport-facebook": "^2.1.1",
     "passport-local": "^1.0.0",
     "pbkdf2-password": "^1.2.1",
     "pug": "^2.0.0-rc.4",

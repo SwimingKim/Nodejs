@@ -5,6 +5,7 @@ var bodyParser = require('body-parser');
 var bkfd2Password = require('pbkdf2-password');
 var passport = require('passport');
 var LocalStratefy = require('passport-local').Strategy;
+var FacebookStrategy = require('passport-facebook').Strategy;
 var hasher = bkfd2Password();
 
 var app = express();
@@ -28,7 +29,7 @@ app.get('/count', function (req, res) {
 });
 app.get('/auth/logout', function (req, res) {
     req.logout();
-    req.session.save(function() {
+    req.session.save(function () {
         res.redirect('/welcome');
     });
 });
@@ -48,51 +49,93 @@ app.get('/welcome', function (req, res) {
         `);
     }
 });
-passport.serializeUser(function(user, done) {
+passport.serializeUser(function (user, done) {
     console.log('serializeUser', user);
-    done(null, user.username);
+    done(null, user.authId);
 });
-passport.deserializeUser(function(id, done) {
+passport.deserializeUser(function (id, done) {
     console.log('deserializeUser', id);
-    for (var i=0; i < users.length; i++) {
+    for (var i = 0; i < users.length; i++) {
         var user = users[i];
-        if (user.username === id) {
+        if (user.authId === id) {
             return done(null, user);
         }
     }
+    done('There is no user.');
 });
 passport.use(new LocalStratefy(
-   function(username, password, done) {
-    var uname = username;
-    var pwd = password;
+    function (username, password, done) {
+        var uname = username;
+        var pwd = password;
 
-    for (var i=0; i < users.length; i++) {
-        var user = users[i];
-        if (uname == user.username) {
-            return hasher({password:pwd, salt:user.salt}, function(err, pass, salt, hash) {
-                if (hash === user.password) {
-                    console.log('LocalStratefy', user);
-                    done(null, user);
-                } else {
-                    done(null, false);
-                }
-            });
+        for (var i = 0; i < users.length; i++) {
+            var user = users[i];
+            if (uname == user.username) {
+                return hasher({ password: pwd, salt: user.salt }, function (err, pass, salt, hash) {
+                    if (hash === user.password) {
+                        console.log('LocalStratefy', user);
+                        done(null, user);
+                    } else {
+                        done(null, false);
+                    }
+                });
+            }
         }
+        done(null, false);
     }
-    done(null, false);
-   } 
 ));
-app.post('/auth/login', passport.authenticate(
-    'local',
-    {
-        successRedirect: '/welcome',
-        failureRedirect: '/auth/login',
-        faliureFlash: false
+passport.use(new FacebookStrategy({
+        clientID: '1963771450307168',
+        clientSecret: '987cba5c59d8c21b74095fc0ff0e3c76',
+        callbackURL: "/auth/facebook/callback",
+        profileFields:['id', 'email', 'gender', 'link', 'locale', 'name', 'timezone', 'updated_time', 'verified', 'displayName']
+    },
+    function(accessTocken, refreshTocken, profile, done) {
+        console.log(profile);
+        var authId = 'facebook:'+profile.id;
+        for (var i=0; i<users.length; i++) {
+            var user = users[i];
+            if (user.authId == authId) {
+                return done(null, user);
+            }
+        }
+        var newuser = {
+            'authId':authId,
+            'displayName':profile.displayName,
+            'email': profile.emails[0].value
+        };
+        users.push(newuser);
+        done(null, newuser);
     }
-)
+));
+app.post('/auth/login',
+    passport.authenticate(
+        'local',
+        {
+            successRedirect: '/welcome',
+            failureRedirect: '/auth/login',
+            faliureFlash: false
+        }
+    )
+);
+app.get('/auth/facebook',
+    passport.authenticate(
+        'facebook',
+        {scope: 'email'}
+    )
+);
+app.get('/auth/facebook/callback',
+    passport.authenticate(
+        'facebook',
+        {
+            successRedirect: '/welcome',
+            failureRedirect: '/auth/login'
+        }
+    )
 );
 var users = [
     {
+        authId: 'local:egoing',
         username: 'egoing',
         password: 'NtaXUsnaAbUrAW8dsCratN3MhZkPs0qvp9ew5HwgLbm/dbI6sI91Xzr5h58//SV4IoqhPlI53JFoeVeo6ifdQetBXjVvc+AhBMEPv3c8c/9kD/RKn7Pfxwn+xJfQqh/MNhKcZUDkpD15a6LZb1AXUaiSQ8wLpXyFypVP5tuX6Mk=',
         salt: 'qAa8oRfF59K1N35PDhIQhL748mgcQ0VDg5fo01stP61j/0aHwe41CwJLvy4H1YP08rsgGhxy+ufACEiUQp2meQ==',
@@ -102,13 +145,14 @@ var users = [
 app.post('/auth/register', function (req, res) {
     hasher({ password: req.body.password }, function (err, pass, salt, hash) {
         var user = {
+            authId: 'local:'+req.body.username,
             username: req.body.username,
             password: hash,
             salt: salt,
             displayName: req.body.displayName
         };
         users.push(user);
-        req.login(user, function(err) {
+        req.login(user, function (err) {
             req.session.save(function () {
                 res.redirect('/welcome');
             });
@@ -149,9 +193,10 @@ app.get('/auth/login', function (req, res) {
             <input type="submit">
         </p>
     </form>
+    <a href="/auth/facebook">facebook</a>
     `;
     res.send(output);
 });
-app.listen(3000, function (req, res) {
-    console.log('Connected 3000 port!!');
+app.listen(3003, function (req, res) {
+    console.log('Connected 3003 port!!');
 });
